@@ -40,14 +40,11 @@ export function detectAvailability(snapshot: PageSnapshot, checkedAt = new Date(
 function finish(status: MonitorStatus, showtimes: ReturnType<typeof extractShowtimes>, checkedAt: string, snapshot: PageSnapshot, reason?: string, signals?: string[]): MonitorResult {
   const partial = {
     status, checkedAt, showtimes, pageTitle: snapshot.title || undefined,
-    movieName: snapshot.movieName || inferMovie(snapshot.title),
-    movieNames: snapshot.movieNames?.length ? snapshot.movieNames : [snapshot.movieName || inferMovie(snapshot.title)].filter((value): value is string => Boolean(value)),
+    movieName: snapshot.movieName || undefined,
+    movieNames: snapshot.movieNames?.length ? snapshot.movieNames : [],
     cinemaName: snapshot.cinemaName || (/allu\s+cinemas?.{0,30}kokapet/i.exec(snapshot.bodyText)?.[0] ?? undefined),
     reason, signals
   };
   return { ...partial, fingerprint: status === "AVAILABLE" ? availabilityFingerprint(showtimes) : resultFingerprint(partial) };
 }
 
-function inferMovie(title: string) {
-  return title.split(/\s+(?:movie tickets|tickets|at allu|[-|])/i)[0]?.trim() || undefined;
-}

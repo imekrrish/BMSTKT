@@ -20,9 +20,9 @@ export async function sendCinemaSummaryEmail(result: MonitorResult) {
   const pattern = new RegExp(config.ALERT_MOVIE_PATTERN, "i");
   const bndListed = movies.some((name) => pattern.test(name)) || result.showtimes.some((show) => pattern.test(show.movieName || ""));
   const bndOpen = isBrandNewDayOpen(result);
-  const bndStatus = bndOpen ? "OPEN — bookable shows detected" : bndListed ? "Listed, but no bookable shows detected" : "Not listed on this page";
+  const bndStatus = bndOpen ? "OPEN - bookable shows detected" : bndListed ? "Listed, but no bookable shows detected" : "Not listed on this page";
   const shows = available.length
-    ? available.map((show) => `${show.movieName || movie}: ${show.time}${show.format ? ` · ${show.format}` : ""}${show.language ? ` · ${show.language}` : ""}`)
+    ? available.map((show) => `${show.movieName || movie}: ${show.time}${show.format ? ` - ${show.format}` : ""}${show.language ? ` - ${show.language}` : ""}`)
     : ["No enabled showtimes detected"];
   const checked = formatInTimeZone(new Date(result.checkedAt), config.TIMEZONE, "dd MMMM yyyy, hh:mm:ss a zzz");
   const subject = bndOpen ? "Spider-Man: Brand New Day tickets are OPEN" : `Allu Cinemas - ${config.SUMMARY_EMAIL_INTERVAL_MINUTES} minute availability summary`;

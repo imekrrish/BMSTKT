@@ -50,7 +50,10 @@ export async function fetchPage(manager: BrowserManager): Promise<PageSnapshot> 
           ).sort((a, b) => a.distanceY - b.distanceY || a.distanceX - b.distanceX);
           return candidates[0]?.text;
         };
-        const nodes = [...document.querySelectorAll(selectors.join(","))].slice(0, 1500);
+        const timePattern = /\b(?:0?[1-9]|1[0-2]):[0-5]\d\s*(?:AM|PM)\b/i;
+        const selectorNodes = [...document.querySelectorAll(selectors.join(","))];
+        const renderedTimeNodes = [...document.querySelectorAll("a, button, [role='button'], [data-showtime], div, span")].filter((element) => timePattern.test(element.textContent || "") && element.children.length <= 4);
+        const nodes = [...new Set([...selectorNodes, ...renderedTimeNodes])].slice(0, 2000);
         const elements = nodes.map((el) => {
           const parent = el.closest("[class*='show'], [class*='cinema'], [class*='venue'], li, section") || el.parentElement;
           const attrs: Record<string, string> = {};

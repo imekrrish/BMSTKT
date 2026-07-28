@@ -66,7 +66,8 @@ export class MonitorWorker {
     const bndImmediate = isBrandNewDayOpen(result) && !state.notificationFingerprints.includes(result.fingerprint);
     const lastSummary = state.notificationHistory.find((item) => item.kind === "summary" || item.kind === "availability");
     const summaryDue = !lastSummary || Date.now() - new Date(lastSummary.sentAt).getTime() >= config.SUMMARY_EMAIL_INTERVAL_MINUTES * 60_000;
-    if ((bndImmediate || summaryDue) && config.EMAIL_TO && result.status !== "ERROR") {
+    const parsedCinemaPage = (result.status === "AVAILABLE" || result.status === "NOT_AVAILABLE") && Boolean(result.movieNames?.length || result.showtimes.length);
+    if ((bndImmediate || summaryDue) && parsedCinemaPage && config.EMAIL_TO) {
       try {
         const delivery = await sendCinemaSummaryEmail(result);
         await this.store.recordNotification({
