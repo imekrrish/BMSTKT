@@ -70,7 +70,7 @@ export function App() {
         <section className="grid two">
           <article className="card">
             <div className="section-title"><div><span>Detected sessions</span><h2>Showtimes</h2></div><CalendarDays size={20} /></div>
-            <div className="showtimes">{state.lastResult?.showtimes.length ? state.lastResult.showtimes.map((show, i) => <div className={`show-chip ${show.enabled ? "enabled" : ""}`} key={`${show.time}-${i}`}><strong>{show.time}</strong><span>{[show.format, show.language].filter(Boolean).join(" · ") || (show.enabled ? "Bookable" : "Unavailable")}</span></div>) : <div className="empty">No showtimes detected yet</div>}</div>
+            <div className="showtimes">{state.lastResult?.showtimes.length ? state.lastResult.showtimes.map((show, i) => <div className={`show-chip ${show.enabled ? "enabled" : ""}`} key={`${show.time}-${i}`}><strong>{show.time}</strong>{show.movieName && <span className="movie-label">{show.movieName}</span>}<span>{[show.format, show.language].filter(Boolean).join(" · ") || (show.enabled ? "Bookable" : "Unavailable")}</span></div>) : <div className="empty">No showtimes detected yet</div>}</div>
             {enabledShows.length > 0 && <p className="tiny"><CheckCircle2 size={14} /> {enabledShows.length} actionable {enabledShows.length === 1 ? "showtime" : "showtimes"} detected</p>}
           </article>
           <article className="card">

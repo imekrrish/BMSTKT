@@ -33,6 +33,23 @@ export async function fetchPage(manager: BrowserManager): Promise<PageSnapshot> 
           const box = el.getBoundingClientRect();
           return style.display !== "none" && style.visibility !== "hidden" && box.width > 0 && box.height > 0;
         };
+        const titleCandidates = [...document.querySelectorAll("h1, h2, h3, h4, strong, a, span, div")];
+        const inferMovieName = (control: Element) => {
+          const box = control.getBoundingClientRect();
+          const centerY = box.top + box.height / 2;
+          const candidates = titleCandidates.map((element) => {
+            const text = (element.textContent || "").replace(/\s+/g, " ").trim();
+            const rect = element.getBoundingClientRect();
+            return { text, rect, distanceY: Math.abs(rect.top + rect.height / 2 - centerY), distanceX: Math.abs(box.left - rect.right) };
+          }).filter(({ text, rect, distanceY }) =>
+            text.length >= 3 && text.length <= 100 && distanceY < 55 && rect.right <= box.left + 30 &&
+            !/\b(?:0?[1-9]|1[0-2]):[0-5]\d\s*(?:AM|PM)\b/i.test(text) &&
+            !/^(?:English|Telugu|Hindi|Tamil|Malayalam|Kannada|2D|3D|IMAX|Available|Fast Filling)$/i.test(text) &&
+            !/Allu Cinemas|Kokapet|Dolby Cinema|Barco Laser|subtitles language|select price|select show/i.test(text) &&
+            /[A-Za-z]/.test(text)
+          ).sort((a, b) => a.distanceY - b.distanceY || a.distanceX - b.distanceX);
+          return candidates[0]?.text;
+        };
         const nodes = [...document.querySelectorAll(selectors.join(","))].slice(0, 1500);
         const elements = nodes.map((el) => {
           const parent = el.closest("[class*='show'], [class*='cinema'], [class*='venue'], li, section") || el.parentElement;
@@ -45,7 +62,8 @@ export async function fetchPage(manager: BrowserManager): Promise<PageSnapshot> 
             disabled: el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true" || /\b(disabled|sold-out)\b/i.test(el.className || ""),
             visible: isVisible(el),
             context: (parent?.textContent || "").trim().slice(0, 500),
-            attributes: attrs
+            attributes: attrs,
+            movieName: /\b(?:0?[1-9]|1[0-2]):[0-5]\d\s*(?:AM|PM)\b/i.test((el.textContent || "") + " " + (parent?.textContent || "")) ? inferMovieName(el) : undefined
           };
         });
         const firstText = (items: string[]) => {
@@ -57,8 +75,8 @@ export async function fetchPage(manager: BrowserManager): Promise<PageSnapshot> 
         return {
           title: document.title, bodyText: document.body?.innerText || "", html: document.documentElement.outerHTML,
           url: location.href, elements,
-          movieName: firstText(["h1", "[data-testid*='movie']", "[class*='movie-name']"]),
-          movieNames: [...new Set([...document.querySelectorAll("h1, h2, h3, [data-testid*='movie'], [class*='movie-name'], [class*='film-name']")].map((element) => (element.textContent || "").trim()).filter((text) => text.length >= 2 && text.length <= 120 && !/allu cinemas|kokapet|showtime|date/i.test(text)))].slice(0, 30),
+          movieName: elements.find((element) => element.movieName)?.movieName,
+          movieNames: [...new Set(elements.map((element) => element.movieName).filter((name): name is string => Boolean(name)))],
           cinemaName: firstText(["[data-testid*='cinema']", "[class*='cinema-name']", "[class*='venue-name']", "h2"])
         };
       }, { selectors: [...detectionConfig.showtimeSelectors, ...detectionConfig.movieSelectors, ...detectionConfig.cinemaSelectors] });

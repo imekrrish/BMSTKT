@@ -9,6 +9,7 @@ export type ElementSnapshot = {
   visible: boolean;
   context: string;
   attributes: Record<string, string>;
+  movieName?: string;
 };
 
 export type PageSnapshot = {
@@ -33,7 +34,8 @@ export function extractShowtimes(snapshot: PageSnapshot): Showtime[] {
     if (!match) continue;
 
     const time = match[0].replace(/\s+/g, " ").toUpperCase();
-    const actionableTag = element.tag === "A" || element.tag === "BUTTON";
+    const knownShowtimeControl = /(?:^|\s)(?:showtime|show-time|show_time)(?:\s|$)/i.test(element.attributes.class || "") || "data-showtime" in element.attributes;
+    const actionableTag = element.tag === "A" || element.tag === "BUTTON" || /^(button|link)$/i.test(element.attributes.role || "") || knownShowtimeControl;
     const bookingHref = Boolean(element.href && /(buytickets|seat|booking|book)/i.test(element.href));
     const bookingText = detectionConfig.bookingTextPattern.test(combined);
     const enabled = !element.disabled && (actionableTag || bookingHref || bookingText);
@@ -45,12 +47,12 @@ export function extractShowtimes(snapshot: PageSnapshot): Showtime[] {
 
     const format = combined.match(/\b(IMAX|4DX|MX4D|DOLBY|SCREENX|2D|3D)\b/i)?.[0].toUpperCase();
     const language = combined.match(/\b(Telugu|Hindi|English|Tamil|Malayalam|Kannada)\b/i)?.[0];
-    candidates.push({ time, format, language, bookingUrl: bookingHref ? element.href : undefined, enabled, signals });
+    candidates.push({ time, movieName: element.movieName, format, language, bookingUrl: bookingHref ? element.href : undefined, enabled, signals });
   }
 
   const unique = new Map<string, Showtime>();
   for (const item of candidates) {
-    const key = `${item.time}|${item.format || ""}|${item.language || ""}`;
+    const key = `${item.movieName || ""}|${item.time}|${item.format || ""}|${item.language || ""}`;
     const prior = unique.get(key);
     if (!prior || (!prior.enabled && item.enabled) || (!prior.bookingUrl && item.bookingUrl)) unique.set(key, item);
   }

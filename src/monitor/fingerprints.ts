@@ -6,6 +6,7 @@ export function availabilityFingerprint(showtimes: Showtime[]): string {
     .filter((s) => s.enabled)
     .map((s) => ({
       time: s.time.trim().toUpperCase(),
+      movieName: s.movieName?.trim().toUpperCase() || "",
       format: s.format?.trim().toUpperCase() || "",
       language: s.language?.trim().toUpperCase() || "",
       url: s.bookingUrl || ""

@@ -20,7 +20,7 @@ const schema = z.object({
   EMAIL_TO: z.string().default(""),
   RESEND_API_KEY: z.string().default(""),
   RESEND_API_URL: z.string().url().default("https://api.resend.com/emails"),
-  SUMMARY_EMAIL_INTERVAL_MINUTES: z.coerce.number().int().min(1).max(1440).default(10),
+  SUMMARY_EMAIL_INTERVAL_MINUTES: z.coerce.number().int().min(1).max(1440).default(30),
   ALERT_MOVIE_PATTERN: z.string().default("spider-man|brand new day|bnd"),
   ALERT_MOVIE_RELEASE_DATE: z.string().default("2026-07-31"),
   DATA_PATH: z.string().default("/data"),
