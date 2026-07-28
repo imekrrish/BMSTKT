@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MonitorResult } from "../src/monitor/monitorTypes.js";
-import { isBrandNewDayOpen } from "../src/server/summaryEmail.js";
+import { isBrandNewDayListed, isBrandNewDayOpen } from "../src/server/summaryEmail.js";
 
 const base: Omit<MonitorResult, "showtimes"> = {
   status: "AVAILABLE",
@@ -11,6 +11,12 @@ const base: Omit<MonitorResult, "showtimes"> = {
 };
 
 describe("Brand New Day immediate alert", () => {
+  it("detects a listing before tickets open", () => {
+    const result = { ...base, showtimes: [{ movieName: "Spider-Man: Brand New Day (UA13+)", time: "11:30 AM", enabled: false }] };
+    expect(isBrandNewDayListed(result)).toBe(true);
+    expect(isBrandNewDayOpen(result)).toBe(false);
+  });
+
   it("does not use another movie's enabled showtime", () => {
     expect(isBrandNewDayOpen({
       ...base,

@@ -1,7 +1,7 @@
 import { setTimeout as delay } from "node:timers/promises";
 import { config } from "../server/config.js";
 import { sendBlockedWarning } from "../server/email.js";
-import { isBrandNewDayOpen, sendCinemaSummaryEmail } from "../server/summaryEmail.js";
+import { isBrandNewDayListed, isBrandNewDayOpen, sendCinemaSummaryEmail } from "../server/summaryEmail.js";
 import { logger } from "../server/logger.js";
 import type { StateStore } from "../server/stateStore.js";
 import { BrowserManager } from "./browser.js";
@@ -63,7 +63,11 @@ export class MonitorWorker {
 
   private async notify(result: MonitorResult) {
     const state = this.store.get();
-    const bndImmediate = isBrandNewDayOpen(result) && !state.notificationFingerprints.includes(result.fingerprint);
+    const bndListed = isBrandNewDayListed(result);
+    const bndOpen = isBrandNewDayOpen(result);
+    const listedNames = (result.movieNames || []).filter((name) => new RegExp(config.ALERT_MOVIE_PATTERN, "i").test(name)).map((name) => name.toLowerCase()).sort().join("|");
+    const bndFingerprint = bndOpen ? result.fingerprint : `bnd-listed:${listedNames || "detected"}`;
+    const bndImmediate = bndListed && !state.notificationFingerprints.includes(bndFingerprint);
     const lastSummary = state.notificationHistory.find((item) => item.kind === "summary" || item.kind === "availability");
     const summaryDue = !lastSummary || Date.now() - new Date(lastSummary.sentAt).getTime() >= config.SUMMARY_EMAIL_INTERVAL_MINUTES * 60_000;
     const parsedCinemaPage = (result.status === "AVAILABLE" || result.status === "NOT_AVAILABLE") && Boolean(result.movieNames?.length || result.showtimes.length);
@@ -71,7 +75,7 @@ export class MonitorWorker {
       try {
         const delivery = await sendCinemaSummaryEmail(result);
         await this.store.recordNotification({
-          fingerprint: bndImmediate ? result.fingerprint : `summary-${Date.now()}`,
+          fingerprint: bndImmediate ? bndFingerprint : `summary-${Date.now()}`,
           sentAt: new Date().toISOString(),
           kind: bndImmediate ? "availability" : "summary",
           recipient: config.EMAIL_TO,
